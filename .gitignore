@@ -1,0 +1,6 @@
+# Nunca subir: el script con los códigos reales, secretos ni carpetas locales
+apps-script/drive-upload.gs
+.env
+.env.*
+.vercel
+.DS_Store

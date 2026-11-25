@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Cuaderno de Zonas</title>
+<style>
+/* Cuaderno compartido, local, sin servidor. Concepto: libreta de trader; el turquesa de las zonas de sus gráficos es el único acento. */
+:root{
+  --bg:#eef1f4; --surface:#ffffff; --fg:#17202a; --muted:#5b6876; --line:#d6dde4;
+  --accent:#0e8f8a; --accent-soft:#d9f0ee; --accent-fg:#ffffff; --warn:#a15c00; --warn-soft:#fdf0d8;
+  --up:#0e8f8a; --down:#c0392b; --zone:rgba(14,143,138,.16);
+  --f-body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; --f-mono:ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#0f161d; --surface:#17212b; --fg:#e6ebf0; --muted:#98a5b3; --line:#2a3846;
+  --accent:#3cc4bd; --accent-soft:#12383a; --accent-fg:#06201f; --warn:#f0b455; --warn-soft:#3a2b10;
+  --up:#3cc4bd; --down:#ff7b6b; --zone:rgba(60,196,189,.18); color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.55;
+  padding:20px max(16px,env(safe-area-inset-right,0px)) 72px max(16px,env(safe-area-inset-left,0px))}
+.wrap{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2,h3{margin:0;text-wrap:balance}
+h1{font-size:28px;line-height:1.15}h2{font-size:19px}h3{font-size:15px}
+p{margin:0}.muted{color:var(--muted)}.mono{font-family:var(--f-mono)}
+.top{display:flex;flex-direction:column;gap:8px}
+.meta{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);font-family:var(--f-mono)}
+nav{display:flex;gap:6px;flex-wrap:wrap;position:sticky;top:0;background:var(--bg);padding:8px 0;z-index:5;border-bottom:1px solid var(--line)}
+nav button{border-radius:99px;padding:6px 14px;font-size:14px}
+nav button[aria-selected="true"]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);font-weight:600}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.tag{font-family:var(--f-mono);font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);background:var(--accent-soft);padding:2px 8px;border-radius:99px;white-space:nowrap}
+.tag.warn{color:var(--warn);background:var(--warn-soft)}
+.tag.gris{color:var(--muted);background:var(--line)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.split{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
+label{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:13.5px;min-width:0}
+label small{font-weight:400;color:var(--muted);font-size:12px}
+input,textarea,select{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;min-width:0}
+textarea{min-height:60px;resize:vertical}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:7px 12px}
+button.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);font-weight:600}
+button.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+button.off{background:var(--warn-soft);border-color:var(--warn);color:var(--warn);font-weight:600}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+ul.clean{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+.item{border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
+.item .why{font-size:13.5px;color:var(--muted)}
+.fase{display:flex;gap:12px;align-items:flex-start}
+.dot{width:12px;height:12px;border-radius:50%;margin-top:6px;flex:none;background:var(--line)}
+.dot.hecho{background:var(--accent)}.dot.curso{background:var(--warn)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.stat{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.stat b{display:block;font-family:var(--f-mono);font-size:18px}.stat span{font-size:12px;color:var(--muted)}
+canvas{width:100%;height:320px;background:var(--bg);border:1px solid var(--line);border-radius:10px;display:block}
+.sig{display:flex;flex-direction:column;gap:6px}
+.sig.sel{border-color:var(--accent)}
+.sig .top2{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px}
+.res-TP{color:var(--up);font-weight:600}.res-SL{color:var(--down);font-weight:600}
+.aviso{background:var(--warn-soft);color:var(--warn);padding:9px 12px;border-radius:8px;font-size:13.5px}
+.ok{color:var(--accent)}
+.tl{border-left:2px solid var(--line);padding-left:14px;display:flex;flex-direction:column;gap:12px}
+.tl .e{position:relative}.tl .e::before{content:"";position:absolute;left:-20px;top:7px;width:10px;height:10px;border-radius:50%;background:var(--accent)}
+.tl time{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.fl{display:flex;justify-content:space-between;gap:10px;padding:6px 10px;background:var(--bg);border:1px solid var(--line);border-radius:8px;font-size:13px}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+ <header class="top">
+  <span class="tag" style="align-self:flex-start">Proyecto Zonas · Boom y Crash</span>
+  <h1>Cuaderno de Zonas</h1>
+  <p class="muted">Aquí juntamos todo lo que vamos construyendo con tu método: qué entendimos, por qué te pedimos cada cosa, una demo para que la pruebes y un lugar para subir tus archivos. Es de los dos: lo que corrijas aquí cambia lo que se construye.</p>
+  <p id="quien" class="muted"></p>
+  <div class="meta"><span id="status">Listo</span><span id="version"></span><a href="#" id="salir" hidden>Cambiar código</a></div>
+ </header>
+ <nav id="tabs" role="tablist"></nav>
+ <main id="vista" class="wrap" style="gap:16px"></main>
+</div>
+
+<script>
+(function(){
+"use strict";
+/* ============ CONFIGURACIÓN (editar aquí) ============ */
+var CFG={
+  VERSION:"2026-11-24 · v0.2",
+  DRIVE_FOLDER:"https://drive.google.com/drive/folders/12XAzpqHg2J1qpUGWmOgVt4wZYP-3Niah",
+  UPLOAD_URL:"",      // URL de la app web de Apps Script (ver ficha/drive-upload.gs). Vacío = se usa la carpeta de Drive.
+  // Códigos de acceso. Se guardan como hash SHA-256 (no en claro). Para añadir uno: ./generar_codigo.sh "Mi-Codigo"
+  CODIGOS:{
+    "6d8811fb2febe8ea08b35759229077cd22248ced11cc8810940d575ba8cacf2e":{rol:"admin",nombre:"Diego"},
+    "89327eb002f75900875367e6d0eecfcb0ebeca90f8eb18b2a82f84e6c7557844":{rol:"invitado",nombre:"David"}
+  },
+  MAX_MB:20
+};
+
+/* ============ CONTENIDO DEL CUADERNO (editar aquí al avanzar) ============ */
+var FASES=[
+ {t:"Conocer tu método",e:"curso",d:"Entender cómo lees el mercado y marcas tus zonas. Estamos aquí."},
+ {t:"Pasarlo a reglas",e:"pend",d:"Convertir lo que nos cuentes en reglas que se puedan probar, sin cambiar tu criterio."},
+ {t:"Probarlo con tus datos",e:"curso",d:"Esta demo. Cargas tu historial de velas y ves dónde habría marcado zonas."},
+ {t:"Compararlo contigo",e:"pend",d:"Tú dices «aquí sí entraba / aquí no». Ajustamos hasta parecernos a ti."},
+ {t:"Avisos en vivo (sin operar)",e:"pend",d:"Una alerta cuando se cumple tu patrón. Tú decides siempre."},
+ {t:"Conexión con MT5 (opcional)",e:"pend",d:"Solo si tú quieres, más adelante."}
+];
+var GARANTIAS=[
+ "No operamos por ti ni tocamos tu cuenta. Nada de esto ejecuta órdenes.",
+ "No te pedimos contraseñas ni tokens.",
+ "Tu método sigue siendo tuyo: aquí solo lo anotamos, lo probamos y te lo mostramos para que lo corrijas.",
+ "Tus archivos van a una carpeta privada del proyecto, no a un chat."
+];
+var ENTENDIDO=[
+ {id:"e1",est:"visto",t:"Operas Boom y Crash, y marcas zonas como rectángulos en el gráfico.",f:"Capturas del directo"},
+ {id:"e2",est:"visto",t:"Usas la herramienta de posición (long/short) para planear entrada, stop y objetivo.",f:"Captura: «Risk/Reward 5.21»"},
+ {id:"e3",est:"visto",t:"Tu stop es muy corto (≈0.10 % en el ejemplo) y el objetivo queda lejos: relación cercana a 1:5.",f:"Captura: «Stops 15.3 (0.10 %)»"},
+ {id:"e4",est:"confirmado",t:"B1, B9, C9, C6 y C1 son Boom 1000, Boom 900, Crash 900, Crash 600 y Crash 1000.",f:"Confirmado por Diego (antes era una suposición del chat del directo)"},
+ {id:"e5",est:"dudoso",t:"Entras después de una bajada larga de velas rojas, cuando el precio llega a la zona, esperando el spike.",f:"Lo que se ve en los gráficos"},
+ {id:"e6",est:"dudoso",t:"La zona nace en el origen del spike anterior.",f:"No lo sabemos: es nuestra hipótesis"},
+ {id:"e7",est:"dudoso",t:"La línea azul horizontal que cruza la zona es un nivel de referencia tuyo.",f:"Captura 2 y 4"},
+ {id:"e8",est:"dudoso",t:"Los «puntos» que te piden en el chat son los niveles de la zona.",f:"Chat del directo"},
+ {id:"e9",est:"dicho",t:"Ya operas manualmente en MetaTrader 5.",f:"Nos lo dijo Diego"}
+];
+var PEDIDOS=[
+ {id:"p1",t:"Tu historial de MT5 (2 a 4 semanas)",why:"Es la prueba real de lo que haces. Con tus operaciones y las velas de ese momento vemos en qué condiciones entras, sin depender de que lo recuerdes.",que:"MT5 → pestaña Historial → clic derecho → Informe. CSV o PDF."},
+ {id:"p2",t:"Velas de Boom/Crash en CSV",why:"Para probar tus reglas sobre los mismos datos que ves tú. La demo de esta página los lee directamente.",que:"MT5 → Herramientas → Centro de historial → exportar CSV (ej. Boom 1000, 1 minuto)."},
+ {id:"p3",t:"10 capturas de operaciones (5 ganadas, 5 perdidas)",why:"Para ver cómo marcas la zona en cada caso y qué diferencia hay entre las que salieron bien y las que no.",que:"Captura directa del gráfico (no foto a la pantalla), con precio y hora visibles."},
+ {id:"p4",t:"Cómo defines la zona",why:"Es la pieza que más cambia el resultado: piso y techo, desde dónde nace, en qué temporalidad.",que:"Explícalo en la pestaña Demo o en la ficha de abajo, con tus palabras."},
+ {id:"p5",t:"Cuánto esperas después de un spike",why:"En Boom/Crash el tiempo desde el último spike parece clave. Queremos usar tu número, no el nuestro.",que:"En velas o minutos. ¿Cambia entre B1, B9, C9 y C6?"},
+ {id:"p6",t:"Cuándo NO operas",why:"Los filtros evitan señales malas. Casi siempre son lo que más separa un método bueno de uno regular.",que:"Horarios, mercado muy movido, noticias, etc."},
+ {id:"p7",t:"Un video corto de pantalla (opcional)",why:"Una operación explicada de principio a fin aclara en 3 minutos lo que en texto tomaría una hora.",que:"Grabación de pantalla, no del celular apuntando a la pantalla."}
+];
+var BITACORA=[
+ {f:"2026-11-22",t:"Primer análisis del método",d:"Vimos tu directo (Boom 900, Boom 1000). Anotamos lo que se ve y lo que aún no sabemos."},
+ {f:"2026-11-23",t:"Plantilla de perfil y guion de preguntas",d:"Definimos cómo se escribe una estrategia como reglas y qué preguntarte."},
+ {f:"2026-11-24",t:"Motor de pruebas",d:"Se puede tomar un perfil de reglas y probarlo sobre velas históricas, midiendo cada operación en R."},
+ {f:"2026-11-24",t:"Este cuaderno y la carpeta de Drive",d:"Un solo lugar para lo que sabemos, lo que falta y los archivos que subas."}
+];
+
+/* ============ UTILIDADES ============ */
+var $=function(s,r){return (r||document).querySelector(s)};
+function h(tag,attrs){var e=document.createElement(tag);attrs=attrs||{};
+ Object.keys(attrs).forEach(function(k){if(k==="text")e.textContent=attrs[k];else if(k==="on"){Object.keys(attrs.on).forEach(function(ev){e.addEventListener(ev,attrs.on[ev])})}else e.setAttribute(k,attrs[k])});
+ for(var i=2;i<arguments.length;i++){var c=arguments[i];if(c==null)continue;e.appendChild(typeof c==="string"?document.createTextNode(c):c)}return e}
+function num(x,d){return isFinite(x)?x.toFixed(d===undefined?2:d):"–"}
+function hora(){return new Date().toTimeString().slice(0,5)}
+function fmtB(n){return n>1048576?(n/1048576).toFixed(1)+" MB":Math.max(1,Math.round(n/1024))+" KB"}
+
+/* ============ ESTADO ============ */
+/* ============ ACCESO POR CÓDIGO ============ */
+function rr(v,a){return (v>>>a)|(v<<(32-a))}
+function sha256(ascii){
+ var mp=Math.pow,mw=mp(2,32),i,j,res="",words=[],abl=ascii.length*8,hash=sha256.h=sha256.h||[],k=sha256.k=sha256.k||[],pc=k.length,ic={};
+ for(var c=2;pc<64;c++){if(!ic[c]){for(i=0;i<313;i+=c)ic[i]=c;hash[pc]=(mp(c,.5)*mw)|0;k[pc++]=(mp(c,1/3)*mw)|0}}
+ ascii+="\x80";while(ascii.length%64-56)ascii+="\x00";
+ for(i=0;i<ascii.length;i++){j=ascii.charCodeAt(i);if(j>>8)return "";words[i>>2]|=j<<((3-i)%4)*8}
+ words[words.length]=((abl/mw)|0);words[words.length]=abl;
+ for(j=0;j<words.length;){var w=words.slice(j,j+=16),oh=hash;hash=hash.slice(0,8);
+  for(i=0;i<64;i++){var w15=w[i-15],w2=w[i-2],a=hash[0],e=hash[4];
+   var t1=hash[7]+(rr(e,6)^rr(e,11)^rr(e,25))+((e&hash[5])^((~e)&hash[6]))+k[i]+(w[i]=(i<16)?w[i]:(w[i-16]+(rr(w15,7)^rr(w15,18)^(w15>>>3))+w[i-7]+(rr(w2,17)^rr(w2,19)^(w2>>>10))|0));
+   var t2=(rr(a,2)^rr(a,13)^rr(a,22))+((a&hash[1])^(a&hash[2])^(hash[1]&hash[2]));
+   hash=[(t1+t2)|0].concat(hash);hash[4]=(hash[4]+t1)|0}
+  for(i=0;i<8;i++)hash[i]=(hash[i]+oh[i])|0}
+ for(i=0;i<8;i++)for(j=3;j+1;j--){var b=(hash[i]>>(j*8))&255;res+=((b<16)?0:"")+b.toString(16)}
+ return res}
+var CODIGO="",USER=null;
+try{var qs=new URLSearchParams(location.search).get("c");CODIGO=(qs||localStorage.getItem("cuaderno-codigo")||"").trim()}catch(e){}
+if(CODIGO)USER=CFG.CODIGOS[sha256(CODIGO)]||null;
+if(!USER){pantallaCodigo(!!CODIGO);return}
+try{localStorage.setItem("cuaderno-codigo",CODIGO)}catch(e){}
+var ADMIN=USER.rol==="admin";
+function pantallaCodigo(fallo){
+ try{localStorage.removeItem("cuaderno-codigo")}catch(e){}
+ $("#tabs").hidden=true;$("#version").textContent="";
+ var inp=h("input",{id:"cod",placeholder:"Tu código",autocomplete:"off"});
+ function ir(){var c=inp.value.trim();if(c)location.href=location.pathname+"?c="+encodeURIComponent(c)}
+ inp.addEventListener("keydown",function(e){if(e.key==="Enter")ir()});
+ $("#vista").appendChild(h("section",{class:"card",style:"max-width:420px"},h("h2",{text:"Entra con tu código"}),
+  h("p",{class:"muted",text:"Te lo pasó Diego. Si abriste un link con código, ya no necesitas escribirlo."}),
+  fallo?h("div",{class:"aviso",text:"Ese código no es válido."}):null,
+  h("label",{},"Código",inp),h("div",{class:"row"},h("button",{class:"primary",type:"button",text:"Entrar",on:{click:ir}}))))}
+$("#salir").hidden=false;$("#salir").addEventListener("click",function(e){e.preventDefault();try{localStorage.removeItem("cuaderno-codigo")}catch(x){}location.href=location.pathname});
+
+var LS="cuaderno-zonas-v3-"+USER.nombre.toLowerCase();
+var P0={tipo:"boom",k:4,n:20,w:1,stop:1,r:5};
+var S={nombre:"",confirm:{},veredictos:{},enviado:{},params:JSON.parse(JSON.stringify(P0)),archivos:[],notas:{},historial:[],actualizado:""};
+var timer=null,dirty={};
+try{var o=JSON.parse(localStorage.getItem(LS)||"null");if(o&&typeof o==="object")fusionar(o)}catch(e){}
+function fusionar(o){["nombre"].forEach(function(k){if(typeof o[k]==="string")S[k]=o[k]});
+ ["confirm","veredictos","enviado","notas"].forEach(function(k){if(o[k]&&typeof o[k]==="object")S[k]=o[k]});
+ if(o.params&&typeof o.params==="object")Object.keys(P0).forEach(function(k){if(o.params[k]!==undefined)S.params[k]=o.params[k]});
+ if(Array.isArray(o.archivos))S.archivos=o.archivos;if(Array.isArray(o.historial))S.historial=o.historial;S.actualizado=o.actualizado||""}
+function guardar(campo,valor){
+ S.historial.push({ts:new Date().toISOString(),campo:campo,valor:String(valor===undefined?"":valor).slice(0,300)});
+ if(S.historial.length>800)S.historial=S.historial.slice(-800);S.actualizado=new Date().toISOString();
+ try{localStorage.setItem(LS,JSON.stringify(S));$("#status").textContent="Guardado en este navegador · "+hora()}catch(e){$("#status").textContent="No se pudo guardar: descarga el archivo ya."}}
+function guardarDebounced(campo,valor){$("#status").textContent="Guardando…";dirty[campo]=valor;clearTimeout(timer);timer=setTimeout(function(){Object.keys(dirty).forEach(function(k){guardar(k,dirty[k])});dirty={}},700)}
+$("#version").textContent="Versión "+CFG.VERSION;
+S.nombre=USER.nombre;$("#quien").textContent=ADMIN?"Vista de administrador":"Hola, "+USER.nombre+".";
+
+/* ============ MOTOR DE DEMO (hipótesis v0, editable con los parámetros) ============ */
+function parseCSV(text){
+ var lines=text.split(/\r?\n/).filter(function(l){return l.trim()});if(lines.length<2)throw new Error("vacío");
+ var sep=lines[0].indexOf("\t")>=0?"\t":(lines[0].indexOf(";")>=0?";":",");
+ var head=lines[0].split(sep).map(function(x){return x.replace(/[<>"]/g,"").trim().toLowerCase()});
+ function col(re){for(var i=0;i<head.length;i++){if(re.test(head[i]))return i}return -1}
+ var ci={o:col(/^open|apertura/),h:col(/^high|máx|max/),l:col(/^low|mín|min/),c:col(/^close|cierre/),d:col(/^date|fecha/),t:col(/^time|hora/)};
+ if(ci.o<0||ci.h<0||ci.l<0||ci.c<0)throw new Error("columnas");
+ var out=[];
+ for(var i=1;i<lines.length;i++){var p=lines[i].split(sep);
+  var o=parseFloat(p[ci.o]),hh=parseFloat(p[ci.h]),l=parseFloat(p[ci.l]),c=parseFloat(p[ci.c]);if(!isFinite(o+hh+l+c))continue;
+  var ts=0;if(ci.d>=0){var ds=(p[ci.d]||"").trim().replace(/\./g,"-");if(ci.t>=0)ds+="T"+(p[ci.t]||"00:00").trim();ts=Date.parse(ds.replace(" ","T"))||0}
+  out.push({t:ts||i*60000,o:o,h:hh,l:l,c:c})}
+ if(out.length<80)throw new Error("pocas");out.sort(function(a,b){return a.t-b.t});return out}
+function muestra(tipo){
+ var seed=tipo==="boom"?12345:67890;function rnd(){seed|=0;seed=seed+0x6D2B79F5|0;var t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}
+ function gauss(){return Math.sqrt(-2*Math.log(rnd()+1e-12))*Math.cos(2*Math.PI*rnd())}
+ var s=tipo==="boom"?1:-1,p=9000,out=[],t0=Date.parse("2026-11-16T00:00:00Z");
+ for(var i=0;i<2500;i++){var o=p,hi=p,lo=p;
+  for(var k=0;k<60;k++){p+=-s*0.08+gauss()*0.5;if(rnd()<1/1000)p+=s*(40+80*rnd());hi=Math.max(hi,p);lo=Math.min(lo,p)}
+  out.push({t:t0+i*60000,o:o,h:hi,l:lo,c:p})}return out}
+function atr(cs,n){var a=new Array(cs.length).fill(NaN),sum=0,tr=[];
+ for(var i=0;i<cs.length;i++){var pc=i?cs[i-1].c:cs[i].o;tr[i]=Math.max(cs[i].h-cs[i].l,Math.abs(cs[i].h-pc),Math.abs(cs[i].l-pc));
+  sum+=tr[i];if(i>=n)sum-=tr[i-n];if(i>=n-1)a[i]=sum/n}return a}
+function correr(cs,P){
+ var s=P.tipo==="boom"?1:-1,A=atr(cs,14),trades=[],spike=null,busy=-1;
+ for(var i=15;i<cs.length;i++){
+  var body=s*(cs[i].c-cs[i].o);
+  if(body>P.k*A[i-1]){spike={i:i,origen:s>0?cs[i].l:cs[i].h,usado:false}}
+  if(i<=busy||!spike||spike.usado||i===spike.i)continue;
+  if(i-spike.i<P.n)continue;
+  var a=A[i];if(!isFinite(a))continue;
+  var toca=s>0?cs[i].l<=spike.origen+P.w*a:cs[i].h>=spike.origen-P.w*a;
+  var valido=s>0?cs[i].c>=spike.origen-P.stop*a:cs[i].c<=spike.origen+P.stop*a;
+  if(!(toca&&valido))continue;
+  var ent=cs[i].c,sl=spike.origen-s*P.stop*a,riesgo=Math.abs(ent-sl);if(riesgo<=0||(s>0&&sl>=ent)||(s<0&&sl<=ent))continue;
+  var tp=ent+s*P.r*riesgo,res="TIMEOUT",R=0,ex=Math.min(cs.length-1,i+300);
+  for(var j=i+1;j<=Math.min(cs.length-1,i+300);j++){
+   var sl_=s>0?cs[j].l<=sl:cs[j].h>=sl,tp_=s>0?cs[j].h>=tp:cs[j].l<=tp;
+   if(sl_){res="SL";R=-1;ex=j;break}if(tp_){res="TP";R=P.r;ex=j;break}}
+  if(res==="TIMEOUT"){R=s*(cs[ex].c-ent)/riesgo}
+  trades.push({i:i,t:cs[i].t,ent:ent,sl:sl,tp:tp,res:res,R:R,ex:ex,zlo:Math.min(spike.origen-P.w*a,spike.origen+P.w*a),zhi:Math.max(spike.origen-P.w*a,spike.origen+P.w*a),spikeI:spike.i});
+  spike.usado=true;busy=ex}
+ return trades}
+function resumen(tr){var g=tr.filter(function(x){return x.R>0}).length,sum=tr.reduce(function(a,x){return a+x.R},0);
+ return{n:tr.length,wr:tr.length?g/tr.length*100:0,Rt:sum,Ra:tr.length?sum/tr.length:0}}
+
+/* ============ VISTAS ============ */
+var VISTAS=[["inicio","Inicio"],["entendido","Lo que entendimos"],["demo","Demo"],["pedidos","Qué te pedimos"],["archivos","Archivos"],["bitacora","Bitácora"],["admin","Admin"]].filter(function(x){return ADMIN||(x[0]!=="bitacora"&&x[0]!=="admin")});
+var actual="inicio";
+function irA(id){actual=id;[].forEach.call($("#tabs").children,function(b){b.setAttribute("aria-selected",b.dataset.id===id?"true":"false")});
+ var v=$("#vista");v.textContent="";({inicio:vInicio,entendido:vEntendido,demo:vDemo,pedidos:vPedidos,archivos:vArchivos,bitacora:vBitacora,admin:vAdmin})[id](v);window.scrollTo(0,0)}
+VISTAS.forEach(function(x){$("#tabs").appendChild(h("button",{type:"button",role:"tab","data-id":x[0],text:x[1],"aria-selected":"false",on:{click:function(){irA(x[0])}}}))});
+
+function vInicio(v){
+ v.appendChild(h("section",{class:"card"},h("h2",{text:"Qué estamos haciendo y por qué"}),
+  h("p",{text:"Operas Boom y Crash a mano en MT5 con zonas que marcas tú. La idea es quitarte trabajo repetitivo y medir lo que ya haces: que una herramienta te avise cuando se cumple tu patrón, que dibuje las zonas por ti y que te diga con datos qué zonas funcionan mejor."}),
+  h("p",{class:"muted",text:"Para lograrlo primero tenemos que entender tu método tal como es. Por eso te pedimos ejemplos y explicaciones, y por eso cada petición tiene su «para qué»."})));
+ var g=h("ul",{class:"clean"});GARANTIAS.forEach(function(t){g.appendChild(h("li",{class:"row"},h("span",{class:"ok",text:"✓"}),h("span",{text:t})))});
+ v.appendChild(h("section",{class:"card"},h("h2",{text:"Para que estés tranquilo"}),g));
+ var f=h("div",{class:"wrap",style:"gap:10px"});
+ FASES.forEach(function(x){f.appendChild(h("div",{class:"fase"},h("span",{class:"dot "+(x.e==="curso"?"curso":x.e==="hecho"?"hecho":"")}),h("div",{},h("b",{text:x.t}),h("p",{class:"muted",text:x.d}))))});
+ v.appendChild(h("section",{class:"card"},h("h2",{text:"Dónde vamos"}),f));
+ v.appendChild(h("section",{class:"card"},h("h2",{text:"Por dónde empezar"}),h("p",{text:"1. Revisa «Lo que entendimos» y dinos qué está bien y qué no."}),h("p",{text:"2. Prueba la «Demo» con los datos de muestra, o carga tu CSV de MT5."}),h("p",{text:"3. Sube lo que puedas desde «Archivos»."}),h("div",{class:"row"},h("button",{class:"primary",type:"button",text:"Ver lo que entendimos",on:{click:function(){irA("entendido")}}}))));
+ v.appendChild(exportBar())}
+
+function vEntendido(v){
+ v.appendChild(h("section",{class:"card"},h("h2",{text:"Lo que entendimos de tu método"}),h("p",{class:"muted",text:"Marcamos con etiqueta si lo vimos con claridad, si es una suposición nuestra o si nos lo dijeron. Para cada punto dinos si es correcto o cómo corregirlo."})));
+ var ul=h("ul",{class:"clean"});
+ ENTENDIDO.forEach(function(x){
+  var c=S.confirm[x.id]||{v:"",c:""};
+  var etq={visto:["Lo vimos","tag"],dudoso:["Por confirmar","tag warn"],dicho:["Nos dijeron","tag gris"],confirmado:["Confirmado","tag"]}[x.est];
+  var ta=h("textarea",{placeholder:"¿Cómo es realmente? (opcional)",hidden:"hidden"});ta.value=c.c||"";
+  var bOk=h("button",{type:"button",text:"Correcto"}),bNo=h("button",{type:"button",text:"Corregir"});
+  function pintar(){bOk.className=c.v==="ok"?"on":"";bNo.className=c.v==="no"?"off":"";ta.hidden=!(c.v==="no"||c.c)}
+  bOk.addEventListener("click",function(){c.v=c.v==="ok"?"":"ok";S.confirm[x.id]=c;pintar();guardar("confirm_"+x.id,c.v)});
+  bNo.addEventListener("click",function(){c.v=c.v==="no"?"":"no";S.confirm[x.id]=c;pintar();guardar("confirm_"+x.id,c.v)});
+  ta.addEventListener("input",function(){c.c=ta.value;S.confirm[x.id]=c;guardarDebounced("confirm_"+x.id+"_nota",ta.value)});
+  pintar();
+  ul.appendChild(h("li",{class:"item"},h("div",{class:"split"},h("p",{text:x.t}),h("span",{class:etq[1],text:etq[0]})),ADMIN?h("p",{class:"why",text:"Fuente (solo admin): "+x.f}):null,x.est==="confirmado"?null:h("div",{class:"row"},bOk,bNo),x.est==="confirmado"?null:ta))});
+ v.appendChild(ul)}
+
+/* ---- Demo ---- */
+var D={cs:null,origen:"muestra",trades:[],sel:0,msg:""};
+function leyenda(){
+ function it(css,txt){return h("span",{class:"row",style:"gap:6px"},h("i",{style:css+";display:inline-block;width:18px;height:10px;border-radius:2px"}),h("span",{text:txt}))}
+ return h("div",{class:"row",style:"gap:16px;font-size:13px"},it("background:var(--zone);border:1px solid var(--accent)","Zona"),it("background:var(--fg);width:10px;border-radius:50%;height:10px","Entrada"),it("border-top:2px dashed var(--up);height:0","Objetivo"),it("border-top:2px dashed var(--down);height:0","Stop"))}
+function vDemo(v){
+ var P=S.params;
+ v.appendChild(h("section",{class:"card"},h("h2",{text:"Demo: ¿dónde habrías marcado tú la zona?"}),
+  h("p",{text:"Tomamos una hipótesis de cómo creemos que marcas tus zonas y la aplicamos a velas. Te mostramos cada señal que habría dado. Tú nos dices si habrías entrado o no, y con eso la acercamos a tu forma real de operar."}),
+  h("ol",{class:"steps",style:"margin:0;padding-left:20px;display:flex;flex-direction:column;gap:3px"},h("li",{text:"Mira la señal en el gráfico y lee la explicación de abajo."}),h("li",{text:"Pulsa «Sí entraba», «No entraba» o «Entraría distinto»."}),h("li",{text:"Si no coincide con tu criterio, cuéntanos en una frase dónde la pondrías tú."})),
+  leyenda(),h("div",{class:"aviso",id:"origenAviso"})));
+ var arch=h("input",{type:"file",accept:".csv,.txt,text/csv",hidden:"hidden",id:"csvIn"});
+ arch.addEventListener("change",function(){var f=arch.files[0];if(!f)return;var rd=new FileReader();
+  rd.onload=function(){try{D.cs=parseCSV(rd.result);D.origen="csv:"+f.name;D.sel=0;recalc()}catch(e){$("#origenAviso").textContent="No pude leer ese archivo. Debe tener columnas Open, High, Low y Close (exportado de MT5 o TradingView)."}};rd.readAsText(f);arch.value=""});
+ v.appendChild(h("section",{class:"card"},h("h3",{text:"¿Con qué datos?"}),h("div",{class:"row"},
+  h("button",{type:"button",text:"Cargar mi CSV de MT5",on:{click:function(){arch.click()}}}),
+  h("button",{type:"button",text:"Usar datos de muestra",on:{click:function(){D.origen="muestra";D.cs=muestra(S.params.tipo);D.sel=0;recalc()}}}),arch),
+  h("p",{class:"muted",text:"Para exportar de MT5: Herramientas → Centro de historial → elige Boom/Crash y 1 minuto → Exportar. El archivo se lee solo en tu navegador; no se sube a ningún lado."})));
+ v.appendChild(h("section",{class:"card",id:"revision"}));
+ /* ajustes */
+ var sel=h("select",{id:"p_tipo"},h("option",{value:"boom",text:"Boom (spikes hacia arriba, compras)"}),h("option",{value:"crash",text:"Crash (spikes hacia abajo, ventas)"}));sel.value=P.tipo;
+ sel.addEventListener("change",function(){P.tipo=sel.value;guardar("param_tipo",P.tipo);if(D.origen==="muestra"){D.cs=muestra(P.tipo)}D.sel=0;recalc()});
+ function campo(k,l,s,step){var i=h("input",{type:"number",step:step||"1",id:"p_"+k});i.value=P[k];i.addEventListener("change",function(){var x=parseFloat(i.value);if(isFinite(x)){P[k]=x;guardar("param_"+k,x);D.sel=0;recalc()}});return h("label",{},l,h("small",{text:s}),i)}
+ var aj=h("details",{class:"card",style:"padding:0"},h("summary",{style:"cursor:pointer;padding:14px 16px;font-weight:600",text:"Ajustar la hipótesis (opcional)"}),
+  h("div",{style:"padding:0 16px 16px;display:flex;flex-direction:column;gap:12px"},
+   h("p",{class:"muted",text:"Si ves que marca zonas donde tú no, cambia estos valores y mira cómo cambian las señales."}),
+   h("div",{class:"grid"},h("label",{},"Índice",h("small",{text:"Boom compra, Crash vende"}),sel),
+    campo("k","Tamaño del spike","Qué tan grande debe ser para contarlo. Más alto = solo spikes grandes.","0.5"),
+    campo("n","Espera tras el spike","Velas que deben pasar antes de buscar entrada."),
+    campo("w","Ancho de la zona","Cuánto se separa el techo y el piso del origen del spike.","0.1"),
+    campo("stop","Distancia del stop","Qué tan lejos de la zona va el stop.","0.1"),
+    campo("r","Objetivo","Cuántas veces el riesgo (5 = ganar 5 por cada 1 arriesgado).","0.5")),
+   h("div",{class:"row"},h("button",{type:"button",text:"Restablecer valores",on:{click:function(){S.params=JSON.parse(JSON.stringify(P0));guardar("param_reset","");irA("demo")}}}))));
+ v.appendChild(aj);
+ v.appendChild(h("section",{class:"card",id:"resultados"}));
+ if(!D.cs)D.cs=muestra(S.params.tipo);recalc()}
+
+function explicar(x){
+ var boom=S.params.tipo==="boom",n=x.i-x.spikeI,verbo=boom?"comprando":"vendiendo";
+ var res=x.res==="TP"?"El precio llegó al objetivo (ganancia de "+num(x.R,1)+" veces el riesgo).":x.res==="SL"?"El precio tocó el stop (pérdida de 1 vez el riesgo).":"No llegó ni al objetivo ni al stop en 300 velas.";
+ return "Hubo un spike "+(boom?"hacia arriba":"hacia abajo")+" y pasaron "+n+" velas. El precio volvió a la zona (entre "+num(x.zlo)+" y "+num(x.zhi)+"), así que la hipótesis entra "+verbo+" a "+num(x.ent)+", con stop en "+num(x.sl)+" y objetivo en "+num(x.tp)+". "+res}
+function recalc(){
+ if(actual!=="demo")return;
+ $("#origenAviso").textContent=D.origen==="muestra"?"Ahora ves datos SIMULADOS con la mecánica de Boom/Crash (un spike cada ~1000 ticks). Sirven para ver cómo funciona; para validar de verdad, carga tu CSV de MT5.":"Datos reales: "+D.origen.slice(4)+" · "+D.cs.length+" velas.";
+ D.trades=correr(D.cs,S.params);if(D.sel>=D.trades.length)D.sel=0;
+ var r=resumen(D.trades),rv=$("#revision"),rs=$("#resultados");rv.textContent="";rs.textContent="";
+ var nTP=D.trades.filter(function(y){return y.res==="TP"}).length,nSL=D.trades.filter(function(y){return y.res==="SL"}).length,nTO=r.n-nTP-nSL;
+ var cuota=100/(1+S.params.r);
+ rs.appendChild(h("h3",{text:"Cómo le fue a la hipótesis"}));
+ rs.appendChild(h("p",{class:"muted",text:"Se cuenta cada señal de arriba: desde la entrada se mira vela por vela qué toca primero, el objetivo o el stop."}));
+ rs.appendChild(h("div",{class:"stats"},st("Señales",r.n),st("Llegaron al objetivo",nTP),st("Tocaron el stop",nSL)));
+ var dinero=r.Rt*10;
+ rs.appendChild(h("p",{text:"Resultado: "+(r.Rt>=0?"ganancia":"pérdida")+" de "+num(Math.abs(r.Rt),1)+" veces el riesgo. Si en cada señal arriesgaras $10, serían "+(dinero>=0?"+":"−")+"$"+num(Math.abs(dinero),0)+"."}));
+ rs.appendChild(h("p",{text:"Con un objetivo de "+S.params.r+" veces el riesgo, para no perder dinero hay que acertar más del "+num(cuota,0)+" % de las señales. La hipótesis acertó "+num(r.wr,0)+" %."+(nTO?" ("+nTO+" quedaron sin resolver.)":"")}));
+ if(D.origen==="muestra")rs.appendChild(h("div",{class:"aviso",text:"Estos son datos simulados: el resultado no dice nada sobre tu método. Carga tu CSV de MT5 para que el cálculo sea real."}));
+ if(!D.trades.length){rv.appendChild(h("h3",{text:"Señales"}));rv.appendChild(h("p",{class:"muted",text:"Con estos valores no hay señales. Prueba un spike más pequeño o menos espera en «Ajustar la hipótesis»."}));return}
+ mostrar()}
+function claveSenal(x){return (D.origen==="muestra"?"m"+S.params.tipo:D.origen)+"@"+x.t}
+function mostrar(){
+ var rv=$("#revision"),x=D.trades[D.sel],n=D.trades.length;rv.textContent="";
+ var key=claveSenal(x),ve=S.veredictos[key]||{v:"",c:""};
+ var hechas=D.trades.filter(function(y){var q=S.veredictos[claveSenal(y)];return q&&q.v}).length;
+ rv.appendChild(h("div",{class:"split"},h("h3",{text:"Señal "+(D.sel+1)+" de "+n}),h("span",{class:"tag"+(hechas===n?"":" gris"),text:"Revisadas: "+hechas+" de "+n})));
+ rv.appendChild(h("canvas",{id:"cv"}));
+ rv.appendChild(h("p",{text:explicar(x)}));
+ var ta=h("textarea",{placeholder:"¿Por qué sí o por qué no? ¿Dónde pondrías tú la zona?"});ta.value=ve.c||"";
+ var bs=[["si","Sí entraba"],["no","No entraba"],["otro","Entraría distinto"]].map(function(o){var b=h("button",{type:"button",text:o[1]});
+  function p(){b.className=ve.v===o[0]?(o[0]==="si"?"on":"off"):""}p();
+  b.addEventListener("click",function(){ve.v=ve.v===o[0]?"":o[0];S.veredictos[key]=ve;bs.forEach(function(q){q.p()});guardar("veredicto_"+key,ve.v)});b.p=p;return b});
+ ta.addEventListener("input",function(){ve.c=ta.value;S.veredictos[key]=ve;guardarDebounced("veredicto_"+key+"_nota",ta.value)});
+ var row=h("div",{class:"row"});bs.forEach(function(b){row.appendChild(b)});
+ rv.appendChild(h("p",{},h("b",{text:"¿Tú habrías entrado aquí?"})));rv.appendChild(row);rv.appendChild(ta);
+ var nav=h("div",{class:"row"},
+  h("button",{type:"button",text:"← Anterior",on:{click:function(){D.sel=(D.sel-1+n)%n;mostrar()}}}),
+  h("button",{class:"primary",type:"button",text:"Siguiente →",on:{click:function(){D.sel=(D.sel+1)%n;mostrar()}}}));
+ rv.appendChild(nav);pintar()}
+function st(l,v){return h("div",{class:"stat"},h("b",{text:String(v)}),h("span",{text:l}))}
+function pintar(){
+ var cv=$("#cv");if(!cv||!D.trades.length)return;var x=D.trades[D.sel],cs=D.cs;
+ var dpr=window.devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight;cv.width=W*dpr;cv.height=H*dpr;var g=cv.getContext("2d");g.scale(dpr,dpr);
+ var cssv=getComputedStyle(document.documentElement),col=function(n){return cssv.getPropertyValue(n).trim()};
+ var a=Math.max(0,Math.min(x.spikeI,x.i)-12),b=Math.min(cs.length-1,x.ex+20);if(b-a>200)a=b-200;if(a<0)a=0;
+ var lo=Infinity,hi=-Infinity;for(var i=a;i<=b;i++){lo=Math.min(lo,cs[i].l);hi=Math.max(hi,cs[i].h)}lo=Math.min(lo,x.sl,x.zlo);hi=Math.max(hi,x.tp,x.zhi);var pad=(hi-lo)*0.06;lo-=pad;hi+=pad;
+ var L=8,Rr=84,T=8,B=8,cw=(W-L-Rr)/(b-a+1),Y=function(p){return T+(hi-p)/(hi-lo)*(H-T-B)};
+ g.fillStyle=col("--zone");g.fillRect(L+(x.spikeI-a)*cw,Y(x.zhi),(b-x.spikeI+1)*cw,Y(x.zlo)-Y(x.zhi));
+ for(var i=a;i<=b;i++){var c=cs[i],up=c.c>=c.o,cx=L+(i-a)*cw+cw/2;g.strokeStyle=g.fillStyle=up?col("--up"):col("--down");
+  g.beginPath();g.moveTo(cx,Y(c.h));g.lineTo(cx,Y(c.l));g.stroke();var y1=Y(Math.max(c.o,c.c)),y2=Y(Math.min(c.o,c.c));g.fillRect(cx-Math.max(1,cw*0.3),y1,Math.max(2,cw*0.6),Math.max(1,y2-y1))}
+ function linea(p,color,tx){g.strokeStyle=color;g.setLineDash([5,4]);g.beginPath();g.moveTo(L,Y(p));g.lineTo(W-Rr,Y(p));g.stroke();g.setLineDash([]);g.fillStyle=color;g.font="11px "+col("--f-mono");g.fillText(tx+" "+num(p),W-Rr+4,Y(p)+4)}
+ linea(x.tp,col("--up"),"TP");linea(x.sl,col("--down"),"SL");linea(x.ent,col("--muted"),"E");
+ var ex=L+(x.i-a)*cw+cw/2;g.fillStyle=col("--fg");g.beginPath();g.arc(ex,Y(x.ent),4,0,7);g.fill()}
+window.addEventListener("resize",function(){if(actual==="demo")pintar()});
+
+function vPedidos(v){
+ v.appendChild(h("section",{class:"card"},h("h2",{text:"Qué te pedimos y para qué"}),h("p",{class:"muted",text:"Nada de esto es un examen. Cada cosa nos ahorra suposiciones. Marca lo que ya enviaste para que no se pierda la cuenta."})));
+ var ul=h("ul",{class:"clean"});
+ PEDIDOS.forEach(function(x){var b=h("button",{type:"button"});function p(){b.textContent=S.enviado[x.id]?"✓ Enviado":"Marcar como enviado";b.className=S.enviado[x.id]?"on":""}
+  b.addEventListener("click",function(){S.enviado[x.id]=!S.enviado[x.id];p();guardar("enviado_"+x.id,S.enviado[x.id])});p();
+  ul.appendChild(h("li",{class:"item"},h("div",{class:"split"},h("b",{text:x.t}),b),h("p",{},h("b",{text:"Para qué: "}),x.why),h("p",{class:"why",text:"Cómo: "+x.que})))});
+ v.appendChild(ul)}
+
+/* ---- Subida a Drive (Apps Script) ---- */
+function enviar(nombreArchivo,mime,base64){
+ return fetch(CFG.UPLOAD_URL,{method:"POST",body:JSON.stringify({codigo:CODIGO,name:nombreArchivo,mime:mime||"application/octet-stream",data:base64})})
+  .then(function(r){return r.json()}).then(function(j){if(!j.ok)throw new Error(j.error||"error");return j})}
+
+function vArchivos(v){
+ var c=h("section",{class:"card"},h("h2",{text:"Archivos"}),h("p",{class:"muted",text:"Capturas, historial de MT5, CSV de velas o video."}));
+ var msg=h("p",{class:"muted",role:"status"});
+ if(CFG.UPLOAD_URL){
+  var inp=h("input",{type:"file",multiple:"multiple",hidden:"hidden"});
+  inp.addEventListener("change",function(){[].forEach.call(inp.files,subir);inp.value=""});
+  c.appendChild(h("div",{class:"row"},h("button",{class:"primary",type:"button",text:"Subir archivos",on:{click:function(){inp.click()}}}),inp,h("span",{class:"muted",text:"Hasta "+CFG.MAX_MB+" MB por archivo"})));
+ }else{
+  c.appendChild(h("div",{class:"aviso",text:ADMIN?"La subida directa aún no está activada: falta UPLOAD_URL (ver drive-upload.gs).":"La subida desde esta página todavía no está lista. Por ahora envíale tus archivos a Diego por WhatsApp y anótalos aquí para llevar la cuenta."}));
+  var anota=h("input",{type:"file",multiple:"multiple",hidden:"hidden"});
+  anota.addEventListener("change",function(){[].forEach.call(anota.files,function(f){S.archivos.push({name:f.name,size:f.size,estado:"anotado",ts:Date.now()});guardar("archivo",f.name)});anota.value="";irA("archivos")});
+  c.appendChild(h("div",{class:"row"},h("button",{type:"button",text:"Anotar un archivo que envié",on:{click:function(){anota.click()}}}),anota,h("span",{class:"muted",text:"Solo anota el nombre aquí."})))}
+ c.appendChild(msg);v.appendChild(c);
+ if(S.archivos.length){
+  var l=h("section",{class:"card"},h("h3",{text:"Lo que has subido o anotado"}));
+  S.archivos.slice().reverse().forEach(function(f){l.appendChild(h("div",{class:"fl"},h("span",{text:f.name+" · "+fmtB(f.size||0)}),h("span",{class:f.estado==="subido"?"ok":"muted",text:f.estado==="subido"?"✓ subido":f.estado})))});
+  v.appendChild(l)}
+ function subir(f){
+  if(f.size>CFG.MAX_MB*1048576){msg.textContent=f.name+" pesa más de "+CFG.MAX_MB+" MB. Envíaselo a Diego por otro medio.";return}
+  msg.textContent="Subiendo "+f.name+"…";var rd=new FileReader();
+  rd.onload=function(){var data=String(rd.result).split(",")[1]||"";
+   enviar(f.name,f.type,data).then(function(){S.archivos.push({name:f.name,size:f.size,estado:"subido",ts:Date.now()});guardar("archivo_subido",f.name);msg.textContent="Listo: "+f.name;irA("archivos")})
+   .catch(function(){msg.textContent="No pude confirmar la subida de "+f.name+". Inténtalo de nuevo o envíaselo a Diego."})};
+  rd.readAsDataURL(f)}}
+
+function vBitacora(v){
+ var tl=h("div",{class:"tl"});BITACORA.slice().reverse().forEach(function(e){tl.appendChild(h("div",{class:"e"},h("time",{text:e.f}),h("h3",{text:e.t}),h("p",{class:"muted",text:e.d})))});
+ v.appendChild(h("section",{class:"card"},h("h2",{text:"Bitácora del proyecto"}),h("p",{class:"muted",text:"Lo que se ha hecho, en orden. Solo la ves tú."}),tl));
+ var rec=S.historial.slice(-25).reverse();
+ var c=h("section",{class:"card"},h("h3",{text:"Cambios recientes en este navegador"}));
+ if(!rec.length)c.appendChild(h("p",{class:"muted",text:"Todavía no hay cambios."}));
+ rec.forEach(function(x){c.appendChild(h("div",{class:"fl"},h("span",{class:"mono",text:x.campo}),h("span",{class:"muted",text:x.ts.slice(0,16).replace("T"," ")})))});
+ v.appendChild(c)}
+
+/* ---- Admin: ver lo que envió David ---- */
+function pintarAvance(box,A){
+ box.textContent="";var conf=A.confirm||{},ver=A.veredictos||{},env=A.enviado||{};
+ var ok=0,no=0;ENTENDIDO.forEach(function(x){var c=conf[x.id];if(c&&c.v==="ok")ok++;if(c&&c.v==="no")no++});
+ var vk=Object.keys(ver).filter(function(k){return ver[k].v||ver[k].c});
+ box.appendChild(h("p",{class:"muted",text:"Avance de "+(A.nombre||"?")+" · actualizado "+(A.actualizado||"?").slice(0,16).replace("T"," ")}));
+ box.appendChild(h("div",{class:"stats"},st("Correctos",ok),st("Por corregir",no),st("Señales revisadas",vk.length),st("Pedidos enviados",PEDIDOS.filter(function(p){return env[p.id]}).length)));
+ box.appendChild(h("h3",{text:"Sus respuestas a «Lo que entendimos»"}));
+ var l=h("ul",{class:"clean"});
+ ENTENDIDO.forEach(function(x){var c=conf[x.id];if(!c||(!c.v&&!c.c))return;
+  l.appendChild(h("li",{class:"item"},h("p",{text:x.t}),h("p",{class:c.v==="ok"?"ok":"why",text:(c.v==="ok"?"✓ Correcto":c.v==="no"?"✗ Corregir":"")+(c.c?" — "+c.c:"")})))});
+ if(!l.children.length)l.appendChild(h("p",{class:"muted",text:"Todavía no respondió ninguno."}));box.appendChild(l);
+ box.appendChild(h("h3",{text:"Veredictos sobre las señales de la demo"}));
+ var l2=h("ul",{class:"clean"});
+ vk.forEach(function(k){var x=ver[k],nom={si:"Sí entraba",no:"No entraba",otro:"Entraría distinto"}[x.v]||"";
+  l2.appendChild(h("li",{class:"item"},h("p",{class:"mono",text:k}),h("p",{text:nom+(x.c?" — "+x.c:"")})))});
+ if(!vk.length)l2.appendChild(h("p",{class:"muted",text:"Todavía ninguno."}));box.appendChild(l2);
+ box.appendChild(h("h3",{text:"Parámetros que dejó en la demo"}));
+ box.appendChild(h("p",{class:"mono",text:JSON.stringify(A.params||{})}));
+ var fa=A.archivos||[];if(fa.length){box.appendChild(h("h3",{text:"Archivos que anotó o subió"}));fa.forEach(function(f){box.appendChild(h("div",{class:"fl"},h("span",{text:f.name}),h("span",{class:"muted",text:f.estado})))})}}
+function vAdmin(v){
+ var out=h("div",{class:"wrap",style:"gap:10px"}),msg=h("p",{class:"muted",role:"status"});
+ var fi=h("input",{type:"file",accept:".json,application/json",hidden:"hidden"});
+ fi.addEventListener("change",function(){var f=fi.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){try{pintarAvance(out,JSON.parse(rd.result));msg.textContent=""}catch(e){msg.textContent="Ese archivo no es válido."}};rd.readAsText(f);fi.value=""});
+ var b=h("button",{class:"primary",type:"button",text:"Traer el último avance de David",on:{click:function(){
+  if(!CFG.UPLOAD_URL){msg.textContent="Falta activar UPLOAD_URL.";return}msg.textContent="Buscando…";
+  fetch(CFG.UPLOAD_URL+"?accion=avance&quien=david&codigo="+encodeURIComponent(CODIGO)).then(function(r){return r.json()}).then(function(j){
+   if(!j.ok)throw new Error(j.error||"error");msg.textContent="Archivo: "+j.archivo;pintarAvance(out,j.avance)}).catch(function(e){msg.textContent="No encontré un avance (¿ya lo envió?)."})}}});
+ v.appendChild(h("section",{class:"card"},h("h2",{text:"Administración"}),h("p",{class:"muted",text:"Solo tú ves esta pestaña. Lo que David hace queda en su navegador hasta que pulsa «Enviar mi avance»; entonces llega a la carpeta de Drive y lo puedes traer aquí."}),
+  h("div",{class:"row"},b,h("button",{type:"button",text:"Ver un .json guardado",on:{click:function(){fi.click()}}}),fi,h("a",{href:CFG.DRIVE_FOLDER,target:"_blank",rel:"noopener"},h("button",{type:"button",text:"Abrir carpeta de Drive"}))),msg));
+ v.appendChild(h("section",{class:"card"},out));
+ v.appendChild(exportBar())}
+
+/* ---- Guardar / enviar avance ---- */
+function exportBar(){
+ var msg=h("span",{class:"muted",role:"status"}),fi=h("input",{type:"file",accept:".json,application/json",hidden:"hidden"});
+ function datos(){var d=JSON.parse(JSON.stringify(S));d.version=CFG.VERSION;d.rol=USER.rol;return JSON.stringify(d,null,2)}
+ fi.addEventListener("change",function(){var f=fi.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){try{var o=JSON.parse(rd.result);if(!o||typeof o!=="object")throw 0;fusionar(o);S.nombre=USER.nombre;guardar("importado",f.name);irA(actual)}catch(e){msg.textContent="Ese archivo no es válido."}};rd.readAsText(f);fi.value=""});
+ var btns=[],puedeEnviar=CFG.UPLOAD_URL&&!ADMIN;
+ if(puedeEnviar)btns.push(h("button",{class:"primary",type:"button",text:"Enviar mi avance a Diego",on:{click:function(){
+  msg.textContent="Enviando…";var b64=btoa(unescape(encodeURIComponent(datos())));
+  enviar("avance_"+USER.nombre.toLowerCase()+"_"+new Date().toISOString().slice(0,10)+".json","application/json",b64).then(function(){msg.textContent="Enviado ✓"}).catch(function(){msg.textContent="No pude enviarlo. Descárgalo y mándaselo a Diego."})}}}));
+ btns.push(h("button",{class:puedeEnviar?"":"primary",type:"button",text:"Descargar mi avance",on:{click:function(){
+  var a=h("a",{href:URL.createObjectURL(new Blob([datos()],{type:"application/json"})),download:"cuaderno_"+USER.nombre.toLowerCase()+"_"+new Date().toISOString().slice(0,10)+".json"});document.body.appendChild(a);a.click();a.remove();msg.textContent="Descargado."}}}));
+ btns.push(h("button",{type:"button",text:"Cargar un avance guardado",on:{click:function(){fi.click()}}}));
+ var row=h("div",{class:"row"});btns.forEach(function(b){row.appendChild(b)});row.appendChild(fi);row.appendChild(msg);
+ return h("section",{class:"card"},h("h3",{text:"Guardar tu avance"}),
+  h("p",{class:"muted",text:puedeEnviar?"Lo que haces aquí se guarda en este navegador. Cuando termines o quieras que Diego lo vea, pulsa «Enviar mi avance».":"Lo que haces aquí se guarda en este navegador. Descarga el archivo para tener una copia."}),row)}
+
+irA("inicio");
+})();
+</script>
+</body>
+</html>
