@@ -13,7 +13,7 @@
  * Los archivos se crean como tú, y su nombre lleva fecha y quién lo subió (trazabilidad).
  */
 var CARPETA_ID = "12XAzpqHg2J1qpUGWmOgVt4wZYP-3Niah"; // Zonas Boom Crash - Recopilado
-var INVITADOS = { "CODIGO-DAVID": "david" };   // código en claro → nombre corto (NO subir a git con códigos reales)
+var INVITADOS = { "CODIGO-DAVID": "david", "CODIGO-SEBASTIAN": "sebastian" };   // código en claro → nombre corto (NO subir a git con códigos reales)
 var ADMINS = ["CODIGO-ADMIN"];                     // código en claro (NO subir a git con códigos reales)
 var MAX_BYTES = 20 * 1024 * 1024;
 

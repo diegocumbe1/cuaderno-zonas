@@ -65,6 +65,7 @@ canvas{width:100%;height:320px;background:var(--bg);border:1px solid var(--line)
 .tl .e{position:relative}.tl .e::before{content:"";position:absolute;left:-20px;top:7px;width:10px;height:10px;border-radius:50%;background:var(--accent)}
 .tl time{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
 .fl{display:flex;justify-content:space-between;gap:10px;padding:6px 10px;background:var(--bg);border:1px solid var(--line);border-radius:8px;font-size:13px}
+#vista{margin:0;width:100%}
 [hidden]{display:none!important}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -93,7 +94,8 @@ var CFG={
   // Códigos de acceso. Se guardan como hash SHA-256 (no en claro). Para añadir uno: ./generar_codigo.sh "Mi-Codigo"
   CODIGOS:{
     "6d8811fb2febe8ea08b35759229077cd22248ced11cc8810940d575ba8cacf2e":{rol:"admin",nombre:"Diego"},
-    "89327eb002f75900875367e6d0eecfcb0ebeca90f8eb18b2a82f84e6c7557844":{rol:"invitado",nombre:"David"}
+    "89327eb002f75900875367e6d0eecfcb0ebeca90f8eb18b2a82f84e6c7557844":{rol:"invitado",nombre:"David"},
+    "6ae3703eb6daeb77413831abb006d0581de0febbdc60eec192649491c1f86f6b":{rol:"invitado",nombre:"Sebastián"}
   },
   MAX_MB:20
 };
@@ -259,7 +261,7 @@ function vInicio(v){
  v.appendChild(h("section",{class:"card"},h("h2",{text:"Qué estamos haciendo y por qué"}),
   h("p",{text:"Operas Boom y Crash a mano en MT5 con zonas que marcas tú. La idea es quitarte trabajo repetitivo y medir lo que ya haces: que una herramienta te avise cuando se cumple tu patrón, que dibuje las zonas por ti y que te diga con datos qué zonas funcionan mejor."}),
   h("p",{class:"muted",text:"Para lograrlo primero tenemos que entender tu método tal como es. Por eso te pedimos ejemplos y explicaciones, y por eso cada petición tiene su «para qué»."})));
- var g=h("ul",{class:"clean"});GARANTIAS.forEach(function(t){g.appendChild(h("li",{class:"row"},h("span",{class:"ok",text:"✓"}),h("span",{text:t})))});
+ var g=h("ul",{class:"clean"});GARANTIAS.forEach(function(t){g.appendChild(h("li",{class:"row",style:"flex-wrap:nowrap;align-items:flex-start;gap:8px"},h("span",{class:"ok",text:"✓"}),h("span",{text:t})))});
  v.appendChild(h("section",{class:"card"},h("h2",{text:"Para que estés tranquilo"}),g));
  var f=h("div",{class:"wrap",style:"gap:10px"});
  FASES.forEach(function(x){f.appendChild(h("div",{class:"fase"},h("span",{class:"dot "+(x.e==="curso"?"curso":x.e==="hecho"?"hecho":"")}),h("div",{},h("b",{text:x.t}),h("p",{class:"muted",text:x.d}))))});
@@ -446,12 +448,13 @@ function vAdmin(v){
  var out=h("div",{class:"wrap",style:"gap:10px"}),msg=h("p",{class:"muted",role:"status"});
  var fi=h("input",{type:"file",accept:".json,application/json",hidden:"hidden"});
  fi.addEventListener("change",function(){var f=fi.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){try{pintarAvance(out,JSON.parse(rd.result));msg.textContent=""}catch(e){msg.textContent="Ese archivo no es válido."}};rd.readAsText(f);fi.value=""});
- var b=h("button",{class:"primary",type:"button",text:"Traer el último avance de David",on:{click:function(){
+ var quien=h("select",{style:"width:auto"},h("option",{value:"david",text:"David"}),h("option",{value:"sebastian",text:"Sebastián"}));
+ var b=h("button",{class:"primary",type:"button",text:"Traer el último avance de:",on:{click:function(){
   if(!CFG.UPLOAD_URL){msg.textContent="Falta activar UPLOAD_URL.";return}msg.textContent="Buscando…";
-  fetch(CFG.UPLOAD_URL+"?accion=avance&quien=david&codigo="+encodeURIComponent(CODIGO)).then(function(r){return r.json()}).then(function(j){
+  fetch(CFG.UPLOAD_URL+"?accion=avance&quien="+quien.value+"&codigo="+encodeURIComponent(CODIGO)).then(function(r){return r.json()}).then(function(j){
    if(!j.ok)throw new Error(j.error||"error");msg.textContent="Archivo: "+j.archivo;pintarAvance(out,j.avance)}).catch(function(e){msg.textContent="No encontré un avance (¿ya lo envió?)."})}}});
- v.appendChild(h("section",{class:"card"},h("h2",{text:"Administración"}),h("p",{class:"muted",text:"Solo tú ves esta pestaña. Lo que David hace queda en su navegador hasta que pulsa «Enviar mi avance»; entonces llega a la carpeta de Drive y lo puedes traer aquí."}),
-  h("div",{class:"row"},b,h("button",{type:"button",text:"Ver un .json guardado",on:{click:function(){fi.click()}}}),fi,h("a",{href:CFG.DRIVE_FOLDER,target:"_blank",rel:"noopener"},h("button",{type:"button",text:"Abrir carpeta de Drive"}))),msg));
+ v.appendChild(h("section",{class:"card"},h("h2",{text:"Administración"}),h("p",{class:"muted",text:"Solo tú ves esta pestaña. Lo que cada persona hace queda en su navegador hasta que pulsa «Enviar mi avance»; entonces llega a la carpeta de Drive y lo puedes traer aquí."}),
+  h("div",{class:"row"},b,quien,h("button",{type:"button",text:"Ver un .json guardado",on:{click:function(){fi.click()}}}),fi,h("a",{href:CFG.DRIVE_FOLDER,target:"_blank",rel:"noopener"},h("button",{type:"button",text:"Abrir carpeta de Drive"}))),msg));
  v.appendChild(h("section",{class:"card"},out));
  v.appendChild(exportBar())}
 
