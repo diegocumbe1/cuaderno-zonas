@@ -58,3 +58,8 @@ function doGet(e) {
 function salida(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
+
+// Ejecútala UNA vez desde el editor (▶ Ejecutar) para dar el permiso de Drive al script.
+function autorizar() {
+  Logger.log("OK, carpeta: " + DriveApp.getFolderById(CARPETA_ID).getName());
+}
